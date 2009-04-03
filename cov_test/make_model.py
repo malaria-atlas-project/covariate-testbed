@@ -9,7 +9,7 @@ import pymc as pm
 from st_cov_fun import my_st
 import gc
 
-__all__ = ['transform_bin_data','make_model','combine_input_data']
+__all__ = ['transform_bin_data','make_model','combine_input_data','st_mean_comp']
 
 def transform_bin_data(pos, neg):
     return pm.logit((pos+1.)/(pos+neg+2.))
@@ -32,7 +32,7 @@ def combine_input_data(lon,lat,t):
     data_mesh = np.vstack((lon, lat, t)).T 
     return data_mesh
     
-def make_model(d,lon,lat,t,covariate_values,cpus=1):
+def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     """
     d : transformed ('gaussian-ish') data
     lon : longitude
@@ -60,8 +60,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1):
 
         tau = pm.Gamma('tau', value=2., alpha=.001, beta=.001/.25)
         V = pm.Lambda('V', lambda tau=tau:1./tau)        
-        nonmod_inc = pm.Uninformative('nonmod_inc', value=.5)
-        inc = pm.Lambda('inc', lambda nonmod_inc = nonmod_inc: nonmod_inc % np.pi)
+        inc = pm.Uniform('inc', -np.pi, np.pi)
         sqrt_ecc = pm.Uniform('sqrt_ecc', value=.1, lower=0., upper=1.)
         ecc = pm.Lambda('ecc', lambda s=sqrt_ecc: s**2)
         amp = pm.Exponential('amp',.1)
@@ -69,11 +68,15 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1):
         scale_t = pm.Exponential('scale_t', .1)
         t_lim_corr = pm.Uniform('t_lim_corr',0,1,value=.8)
         sin_frac = pm.Uniform('sin_frac',0,1)
+        
+        if lockdown:
+            for p in [tau, amp, scale, scale_t, t_lim_corr, sin_frac, inc]:
+                p._observed=True
     
         # The mean of the field
         @pm.deterministic(trace=True)
-        def M(m=m_const, tc=t_coef):
-            return pm.gp.Mean(st_mean_comp, m_const = m, t_coef = tc)
+        def M(mc=m_const, tc=t_coef):
+            return pm.gp.Mean(st_mean_comp, m_const = mc, t_coef = tc)
         
         # The mean, evaluated  at the observation points, plus the covariates    
         @pm.deterministic(trace=False)
