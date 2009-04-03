@@ -1,0 +1,81 @@
+\documentclass[a4paper]{article}
+\usepackage{fullpage}
+\usepackage{epsfig}
+\usepackage{pdfsync} 
+\usepackage{amsfonts}
+\usepackage{amsmath} 
+\begin{document}
+
+\title{Covariate testbed}
+\author{Anand}
+\maketitle
+
+\section{Model} % (fold)
+\label{sec:model}
+
+The stripped-down model is:
+\begin{eqnarray*}
+    f|\beta,\phi \sim \textup{GP}(M_\beta,C_\phi) \\
+    M_\beta(x) = k(x)^T \beta\\
+    p(\beta)\propto 1\\
+    \phi\sim\ldots\\
+\end{eqnarray*}
+where $k(x)$ is the matrix formed by evaluating the vector of covariate functions on $x$. The goal is to come up with a posterior for the coefficients $\beta$ and covariance parameters $\phi$, from which $f$ can be predicted at unsampled locations.
+
+% section model (end)
+
+\section{MCMC} % (fold)
+\label{sec:mcmc}
+The full conditional distribution of $\beta$ is Gaussian:
+\begin{eqnarray*}
+    \beta|\phi,d(x)\sim\textup{N}(\mu_p,C_p)\\
+    C_p=k(x)^TC_\phi(x,x)k(x)\\
+    \mu_p=C_p^{-1}k(x)^TC_\phi(x,x)^{-1}f(x)
+\end{eqnarray*}
+meaning $\beta$ can be Gibbs sampled. The covariance parameters are best handled by \texttt{AdaptiveMetropolis}. 
+% section mcmc (end)
+
+\section{EM algorithm} % (fold)
+\label{sec:em_algorithm}
+An approximate marginal posterior distribution for the covariance parameters $\phi$ can be found via the SEM algorithm. Sampling $\phi$ from its approximate posterior, then sampling $\beta$ from its full conditional distribution gives an approximate joint sample from the posterior.
+
+The objective function for the maximization step is
+\begin{eqnarray*}
+    \textup{E}\left[\log p(f(x)|\beta,\phi)\mid\phi, f(x)\right] \\
+    = \textup{E}\left[-\frac{1}{2}\log\left|2\pi C_\phi(x,x)\right|
+        - (f(x)-k(x)^T\beta)^TC_\phi(x,x)^{-1}(f(x)-k(x)^t\beta)\mid \phi, f(x)\right].
+\end{eqnarray*}
+Expanding the quadratic form yields
+\begin{eqnarray*}
+    -f(x)^TC_\phi(x,x)^{-1}f(x) + 2f(x)^TC_\phi(x,x)^{-1}k(x)^T\textup{E}[\beta|\phi,f(x)]-\textup{E}\left[\beta^Tk(x)C_\phi(x,x)^{-1}k(x)^T\beta\mid\phi,f(x)\right].
+\end{eqnarray*}
+The left-hand term is an irrelevant constant. The central term is equal to
+\begin{eqnarray*}
+    2f(x)^TC_\phi(x,x)^{-1}k(x)^T\mu_p,
+\end{eqnarray*}
+where $\mu_p$ is the full conditional mean of $\beta$ from the MCMC section. The right-hand term can be rewritten as a dot product
+\begin{eqnarray*}
+    -\textup E\left[\sum_i (\sigma\beta)_i^2\mid \phi, f(x)\right]
+\end{eqnarray*}
+where $\sigma$ is the Cholesky factor
+\begin{eqnarray*}
+    \sqrt{k(x)^TC_\phi(x,x)^{-1}k(x)}.
+\end{eqnarray*}
+This can be expanded to
+\begin{eqnarray*}
+    -\sum_i \left(\textup V\left[(\sigma \beta)_i\mid f(x), \phi\right] + \textup E\left[(\sigma \beta)_i\mid f(x),\phi\right]^2\right)
+\end{eqnarray*}
+which is equal to
+\begin{eqnarray*}
+    -\sum_i \left( \sigma_{i,:}C_p\sigma_{i,:}^T + \sigma_{i,:}\mu_p\right),
+\end{eqnarray*}
+where again $\mu_p$ and $C_p$ were defined in the MCMC section.
+
+To summarize, the objective function is
+\begin{eqnarray*}
+    -\frac{1}{2}\log\left|2\pi C_\phi(x,x)\right|+2f(x)^TC_\phi(x,x)^{-1}k(x)^T\mu_p-\sum_i \left( \sigma_{i,:}C_p\sigma_{i,:}^T + \sigma_{i,:}\mu_p\right).
+\end{eqnarray*}
+
+% section em_algorithm (end)
+
+\end{document}

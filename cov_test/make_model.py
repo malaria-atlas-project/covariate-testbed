@@ -9,32 +9,6 @@ import pymc as pm
 from st_cov_fun import my_st
 import gc
 
-class CovariateStepper(pm.StepMethod):
-    
-    def __init__(self, covariate_dict, m_const, t, t_coef, M_eval, sig, d):
-        self.m_const = m_const
-        self.t_coef=t_coef
-        self.M = M_eval
-        self.sig = sig
-        self.d = d.value
-        
-        self.beta = pm.Container([self.m_const, self.t_coef]+[v[0] for v in covariate_dict.values()])
-        self.x = np.vstack((np.ones((1,len(t))), np.atleast_2d(t), np.asmatrix([v[1] for v in covariate_dict.values()])))
-    
-        pm.StepMethod.__init__(self, self.beta)
-    
-    def step(self):
-        post_tau_sig = pm.gp.trisolve(self.sig.value.T, self.x.T, uplo='U').T
-        x_tau = pm.gp.trisolve(self.sig.value, post_tau_sig.T, uplo='L').T
-        post_tau = np.dot(post_tau_sig, post_tau_sig.T)
-        post_tau_sig = np.linalg.cholesky(post_tau)
-        
-        post_mean = np.dot(np.dot(post_tau, x_tau), self.d)
-        new_val = np.asarray(np.dot(post_tau_sig, np.random.normal(size=self.x.shape[0])) + post_mean).squeeze()
-        
-        [b.set_value(nv) for (b,nv) in zip(self.beta, new_val)]
-        
-
 def st_mean_comp(x, m_const, t_coef):
     lon = x[:,0]
     lat = x[:,1]
@@ -42,7 +16,7 @@ def st_mean_comp(x, m_const, t_coef):
     return m_const + t_coef * t
 
 
-def create_model(d,lon,lat,t,covariate_values,cpus=1):
+def make_model(d,lon,lat,t,covariate_values,cpus=1):
     """
     d : transformed ('gaussian-ish') data
     lon : longitude
@@ -152,37 +126,3 @@ def create_model(d,lon,lat,t,covariate_values,cpus=1):
             gc.collect()
 
     return locals()
-
-def MCMC_obj(d,lon,lat,t,cv,cpus,dbname=None,**kwds):
-    while True:
-        print 'Trying to create model'
-        try:
-            if dbname is not None:
-                M = pm.MCMC(create_model(d,lon,lat,t,cv,cpus), db='hdf5', dbname=dbname, dbcomplevel=1, dbcomplib='zlib')
-            else:
-                M = pm.MCMC(create_model(d,lon,lat,t,cv,cpus))
-            break
-        except np.linalg.LinAlgError:
-            pass
-    # Special Gibbs step method for covariates
-    M.use_step_method(CovariateStepper, M.covariate_dict, M.m_const, t, M.t_coef, M.M_eval, M.sig, M.data)
-    # Adaptive Metropolis step method for covariance parameters
-    M.use_step_method(pm.AdaptiveMetropolis, [M.tau, M.sqrt_ecc, M.amp, M.scale, M.scale_t, M.t_lim_corr], **kwds)
-    S = M.step_method_dict[M.m_const][0]
-    
-    return M, S
-    
-
-if __name__ == '__main__':
-    # create_model(d,lon,lat,t,covariate_values)
-    N=50
-    names = ['rain','temp','ndvi']
-    d=np.random.normal(size=N)
-    lon=np.random.normal(size=N)
-    lat=np.random.normal(size=N)
-    t=np.random.normal(size=N)
-    cv = {}
-    for name in names:
-        cv[name] = np.random.normal(size=N)
-    M, S = MCMC_obj(d,lon,lat,t,cv,8,'trial')
-    M.isample(10000,0,10)
