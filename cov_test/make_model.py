@@ -58,16 +58,33 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             this_coef = pm.Uninformative(cname + '_coef', value=0.)
             covariate_dict[cname] = (this_coef, cval)
 
-        tau = pm.Gamma('tau', value=2., alpha=.001, beta=.001/.25)
-        V = pm.Lambda('V', lambda tau=tau:1./tau)        
-        inc = pm.Uniform('inc', -np.pi, np.pi)
-        sqrt_ecc = pm.Uniform('sqrt_ecc', value=.1, lower=0., upper=1.)
+        log_V = pm.Uninformative('log_V', value=0)
+        V = pm.Lambda('V', lambda lv = log_V: np.exp(lv))        
+
+        inc = pm.CircVonMises('inc', 0,0)
+
+        @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=1)
+        def sqrt_ecc(value=.1):
+            return 0.
         ecc = pm.Lambda('ecc', lambda s=sqrt_ecc: s**2)
-        amp = pm.Exponential('amp',.1)
-        scale = pm.Exponential('scale',.1)        
-        scale_t = pm.Exponential('scale_t', .1)
-        t_lim_corr = pm.Uniform('t_lim_corr',0,1,value=.8)
-        sin_frac = pm.Uniform('sin_frac',0,1)
+
+        log_amp = pm.Uninformative('log_amp', value=0)
+        amp = pm.Lambda('amp', lambda la = log_amp: np.exp(la))
+
+        log_scale = pm.Uninformative('log_scale', value=0)
+        scale = pm.Lambda('scale', lambda ls = log_scale: np.exp(ls))
+
+        log_scale_t = pm.Uninformative('log_scale_t', value=0)
+        scale_t = pm.Lambda('scale_t', lambda ls = log_scale: np.exp(ls))
+        
+        @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=1)
+        def t_lim_corr(value=.8):
+            return 0.
+        ecc = pm.Lambda('ecc', lambda s=sqrt_ecc: s**2)
+
+        @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=1)
+        def sin_frac(value=.1):
+            return 0.
         
         if lockdown:
             for p in [tau, amp, scale, scale_t, t_lim_corr, sin_frac, inc]:
