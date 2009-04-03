@@ -1,0 +1,42 @@
+#!/usr/bin/python
+
+from cov_test import MCMC_obj
+from pylab import csv2rec
+import os,sys
+import pymc as pm
+
+# MCMC_obj(pos,neg,lon,lat,t,cv,cpus,dbname=None,**kwds)
+
+doc_str = """cov-test-infer input.csv ncpus dbname
+- input.csv: A csv file whose column names are lat, lon, t, pos, neg and the names of any covariates used.
+- ncpus: The number of processors to be used.
+- dbname: The filename to use for the trace."""
+
+if len(sys.argv)==0:
+    print doc_str
+    sys.exit()
+if sys.argv[1] in ['-h','--help']:
+    print doc_str
+    sys.exit()
+
+input = sys.argv[1]
+cpus = int(sys.argv[2])
+dbname = sys.argv[3]
+
+input = csv2rec(input)
+lon = input.lon
+lat = input.lat
+t = input.t
+pos = input.pos
+neg = input.neg
+
+cv = {}
+for n in input.dtype.names:
+    if n not in ['lon','lat','t','pos','neg']:
+        cv[n]=input[n]
+        
+M,S=MCMC_obj(pos,neg,lon,lat,t,cv,cpus,dbname)
+M.isample(10000)
+os.mkdir(dbname+'_plots')
+os.chdir(dbname+'_plots')
+pm.Matplot.plot(M)

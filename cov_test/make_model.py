@@ -9,13 +9,29 @@ import pymc as pm
 from st_cov_fun import my_st
 import gc
 
+__all__ = ['transform_bin_data','make_model','combine_input_data']
+
+def transform_bin_data(pos, neg):
+    return pm.logit((pos+1.)/(pos+neg+2.))
+
 def st_mean_comp(x, m_const, t_coef):
     lon = x[:,0]
     lat = x[:,1]
     t = x[:,2]
     return m_const + t_coef * t
 
+def combine_input_data(lon,lat,t):
+    # Convert latitude and longitude from degrees to radians.
+    lon = lon*np.pi/180.
+    lat = lat*np.pi/180.
 
+    # Convert time to end year - 2009 (no sense forcing mu to adjust by too much).
+    t = t - 2009
+    
+    # Make lon, lat, t triples.
+    data_mesh = np.vstack((lon, lat, t)).T 
+    return data_mesh
+    
 def make_model(d,lon,lat,t,covariate_values,cpus=1):
     """
     d : transformed ('gaussian-ish') data
@@ -26,16 +42,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1):
     cpus : int
     """
         
-    # Convert latitude and longitude from degrees to radians.
-    lon = lon*np.pi/180.
-    lat = lat*np.pi/180.
-
-    # Convert time to end year - 2009 (no sense forcing mu to adjust by too much).
-    t = t - 2009
-    
-    # Make lon, lat, t triples.
-    data_mesh = np.vstack((lon, lat, t)).T 
-    logp_mesh = data_mesh  
+    logp_mesh = combine_input_data(lon,lat,t)
 
     # =====================
     # = Create PyMC model =
@@ -64,7 +71,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1):
         sin_frac = pm.Uniform('sin_frac',0,1)
     
         # The mean of the field
-        @pm.deterministic
+        @pm.deterministic(trace=True)
         def M(m=m_const, tc=t_coef):
             return pm.gp.Mean(st_mean_comp, m_const = m, t_coef = tc)
         
@@ -88,7 +95,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1):
                     return 0.
 
             # A Deterministic valued as a Covariance object. Uses covariance my_st, defined above. 
-            @pm.deterministic
+            @pm.deterministic(trace=True)
             def C(amp=amp,scale=scale,inc=inc,ecc=ecc,scale_t=scale_t, t_lim_corr=t_lim_corr, sin_frac=sin_frac):
                 return pm.gp.FullRankCovariance(my_st, amp=amp, scale=scale, inc=inc, ecc=ecc,st=scale_t, sd=.5,
                                                 tlc=t_lim_corr, sf = sin_frac, n_threads=cpus)
