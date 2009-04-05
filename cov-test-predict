@@ -38,4 +38,4 @@ for n in input.dtype.names:
         cv[n]=input[n]
 
 samps = trace_to_prediction(tracefile, lon, lat, t, cv, ntot, burn=0)
-samps.tofile(tracefile+'_samps',sep=',')
+samps.tofile(tracefile.replace('.hdf5','')+'_samps.csv',sep=',')
