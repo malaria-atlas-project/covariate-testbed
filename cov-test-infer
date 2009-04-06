@@ -15,7 +15,7 @@ NOTE: Burnin samples are not discarded here, you can ignore them at the predicti
 
 import sys
 
-if len(sys.argv)==0:
+if len(sys.argv)!=6:
     print doc_str
     sys.exit()
 if sys.argv[1] in ['-h','--help']:

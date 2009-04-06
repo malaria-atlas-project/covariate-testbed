@@ -12,7 +12,7 @@ cov-test-predict dbname input.csv ntot burn
 - burn: The number of burnin iterations to discard.
 """
 
-if len(sys.argv)==0:
+if len(sys.argv)!=6:
     print doc_str
     sys.exit()
 if sys.argv[1] in ['-h','--help']:
