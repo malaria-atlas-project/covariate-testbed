@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 doc_str = """
-HOW TO USE cov-test-infer
+How to use cov-test-infer
 
 cov-test-infer input.csv iter thin ncpus dbname
+
 - input.csv: A csv file whose column names are lat, lon, t, pos, neg and the names of any covariates used.
 - iter: The number of MCMC iterations to use.
 - thin: The interval at which samples should be kept (tallied).

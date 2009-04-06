@@ -3,9 +3,10 @@
 import sys
 
 doc_str = doc_str = """
-HOW TO USE cov-test-predict
+How to use cov-test-predict
 
 cov-test-predict dbname input.csv ntot burn
+
 - dbname: The filename used for the trace.
 - input.csv: A csv file whose column names are lat, lon, t, pos, neg and the names of any covariates used.
 - ntot: The total number of predictions to make.
