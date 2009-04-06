@@ -1,16 +1,19 @@
 #!/usr/bin/python
 
-from cov_test import MCMC_obj
-from pylab import csv2rec
-import os,sys
-import pymc as pm
+doc_str = """
+HOW TO USE cov-test-infer
 
-# MCMC_obj(pos,neg,lon,lat,t,cv,cpus,dbname=None,**kwds)
-
-doc_str = """cov-test-infer input.csv ncpus dbname
+cov-test-infer input.csv ncpus dbname
 - input.csv: A csv file whose column names are lat, lon, t, pos, neg and the names of any covariates used.
+- iter: The number of MCMC iterations to use.
+- thin: The interval at which samples should be kept (tallied).
 - ncpus: The number of processors to be used.
-- dbname: The filename to use for the trace."""
+- dbname: The filename to use for the trace.
+
+NOTE: Burnin samples are not discarded here, you can ignore them at the prediction stage.
+"""
+
+import sys
 
 if len(sys.argv)==0:
     print doc_str
@@ -19,9 +22,20 @@ if sys.argv[1] in ['-h','--help']:
     print doc_str
     sys.exit()
 
+from cov_test import MCMC_obj
+import matplotlib
+matplotlib.interactive(False)
+from pylab import csv2rec
+import os
+import pymc as pm
+
+# MCMC_obj(pos,neg,lon,lat,t,cv,cpus,dbname=None,**kwds)
+
 input = sys.argv[1]
-cpus = int(sys.argv[2])
-dbname = sys.argv[3]
+iter = int(sys.argv[2])
+thin = int(sys.argv[3])
+cpus = int(sys.argv[4])
+dbname = sys.argv[5]
 
 input = csv2rec(input)
 lon = input.lon
@@ -36,7 +50,7 @@ for n in input.dtype.names:
         cv[n]=input[n]
         
 M,S=MCMC_obj(pos,neg,lon,lat,t,cv,cpus,dbname)
-M.isample(10000)
+M.isample(iter,0,thin)
 os.mkdir(dbname+'_plots')
 os.chdir(dbname+'_plots')
 pm.Matplot.plot(M)

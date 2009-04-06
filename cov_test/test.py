@@ -3,8 +3,8 @@ import numpy as np
 import pymc as pm
 import pylab as pl
 from make_model import st_mean_comp, my_st
-n_data = 90
-n_pred = 10
+n_data = 900
+n_pred = 100
 
 # make_model(d,lon,lat,t,covariate_values)
 names = ['rain','temp','ndvi']
@@ -46,6 +46,19 @@ ra_pred = np.rec.fromarrays((pos[:n_pred], neg[:n_pred], lon[:n_pred], lat[:n_pr
 pl.rec2csv(ra_pred,'test_pred.csv')
 
 
-os.system('../cov-test-infer test_data.csv 2 test')
+os.system('../cov-test-infer test_data.csv 10000 10 2 test')
 os.system('../cov-test-predict test test_pred.csv 1000 100')
+
+# ra_data = pl.csv2rec('test_data.csv')
+# ra_pred = pl.csv2rec('test_pred.csv')
 samps = np.fromfile('test_samps.csv',sep=',').reshape((n_pred,-1))
+
+pos_pred = pos[n_data:]
+neg_pred = neg[n_data:]
+p_pred = (pos_pred+1.)/(pos_pred+neg_pred+2.)
+
+quants = []
+for i in xrange(samps.shape[0]):
+    quants.append(np.sum(samps[i,:]<p_pred[i])/float(samps.shape[1]))
+    
+quants.tofile('test_quants.csv',sep=',')

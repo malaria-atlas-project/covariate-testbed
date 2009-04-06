@@ -75,7 +75,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
         scale = pm.Lambda('scale', lambda ls = log_scale: np.exp(ls))
 
         log_scale_t = pm.Uninformative('log_scale_t', value=0)
-        scale_t = pm.Lambda('scale_t', lambda ls = log_scale: np.exp(ls))
+        scale_t = pm.Lambda('scale_t', lambda ls = log_scale_t: np.exp(ls))
         
         @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=1)
         def t_lim_corr(value=.8):
