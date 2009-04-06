@@ -38,7 +38,7 @@ def maybe_int(str, n):
     try:
         return int(str)
     except ValueError:
-        print 'Failed to convert value %s given for argument %s to integer.'%(str,n)
+        print 'Error, failed to convert value %s given for argument %s to integer.'%(str,n)
         sys.exit()
 
 input = sys.argv[1]
@@ -46,6 +46,11 @@ iter = maybe_int(sys.argv[2],'iter')
 thin = maybe_int(sys.argv[3],'thin')
 cpus = maybe_int(sys.argv[4],'cpus')
 dbname = sys.argv[5]
+
+if dbname in os.listdir('.'):
+    print 'Error, database file %s already exists. Delete or move it, or change the dmname argument.'%dbname
+    sys.exit()
+
 
 input = csv2rec(input)
 lon = input.lon

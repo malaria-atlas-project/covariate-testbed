@@ -123,9 +123,8 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             # The evaluation of the Covariance object, plus the nugget.
             @pm.deterministic(trace=False)
             def C_eval(C=C, V=V):
-                nug = np.atleast_2d(V*np.ones(logp_mesh.shape[0]))
-                out = C(logp_mesh, logp_mesh)
-                out.ravel()[0,::logp_mesh.shape[0]+1]+=nug
+                out = np.asarray(C(logp_mesh, logp_mesh), order='C')
+                out.ravel()[::logp_mesh.shape[0]+1]+=V
                 return  out
                 
             @pm.deterministic(trace=False)
