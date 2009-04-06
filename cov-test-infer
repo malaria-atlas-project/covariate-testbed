@@ -15,6 +15,10 @@ NOTE: Burnin samples are not discarded here, you can ignore them at the predicti
 """
 
 import sys
+import matplotlib
+matplotlib.use('pdf')
+matplotlib.interactive(False)
+
 
 if len(sys.argv)!=6:
     print doc_str
@@ -24,9 +28,6 @@ if sys.argv[1] in ['-h','--help']:
     sys.exit()
 
 from cov_test import MCMC_obj
-import matplotlib
-matplotlib.use('pdf')
-matplotlib.interactive(False)
 from pylab import csv2rec
 import os
 import pymc as pm
