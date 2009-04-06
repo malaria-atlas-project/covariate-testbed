@@ -13,7 +13,7 @@ cov-test-predict dbname input.csv ntot burn
 - burn: The number of burnin iterations to discard.
 """
 
-if len(sys.argv)!=6:
+if len(sys.argv)!=5:
     print doc_str
     sys.exit()
 if sys.argv[1] in ['-h','--help']:
@@ -26,10 +26,17 @@ from pylab import csv2rec
 
 # trace_to_prediction(tracefile, lon, lat, t, covariate_values, ntot, burn=0)
 
+def maybe_int(str, n):
+    try:
+        return int(str)
+    except ValueError:
+        print 'Failed to convert value %s given for argument %s to integer.'%(str,n)
+        sys.exit()
+
 tracefile = sys.argv[1]
 input = sys.argv[2]
-ntot = int(sys.argv[3])
-burn = int(sys.argv[4])
+ntot = maybe_int(sys.argv[3],'ntot')
+burn = maybe_int(sys.argv[4],'n')
 
 input = csv2rec(input)
 lon = input.lon

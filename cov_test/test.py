@@ -3,8 +3,8 @@ import numpy as np
 import pymc as pm
 import pylab as pl
 from make_model import st_mean_comp, my_st
-n_data = 900
-n_pred = 100
+n_data = 90
+n_pred = 10
 
 # make_model(d,lon,lat,t,covariate_values)
 names = ['rain','temp','ndvi']
@@ -57,8 +57,8 @@ pos_pred = pos[n_data:]
 neg_pred = neg[n_data:]
 p_pred = (pos_pred+1.)/(pos_pred+neg_pred+2.)
 
-quants = []
+quants = np.empty(samps.shape[0])
 for i in xrange(samps.shape[0]):
-    quants.append(np.sum(samps[i,:]<p_pred[i])/float(samps.shape[1]))
+    quants[i] = np.sum(samps[i,:]<p_pred[i])/float(samps.shape[1])
     
 quants.tofile('test_quants.csv',sep=',')

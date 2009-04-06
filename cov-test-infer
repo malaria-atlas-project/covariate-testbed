@@ -32,10 +32,17 @@ import pymc as pm
 
 # MCMC_obj(pos,neg,lon,lat,t,cv,cpus,dbname=None,**kwds)
 
+def maybe_int(str, n):
+    try:
+        return int(str)
+    except ValueError:
+        print 'Failed to convert value %s given for argument %s to integer.'%(str,n)
+        sys.exit()
+
 input = sys.argv[1]
-iter = int(sys.argv[2])
-thin = int(sys.argv[3])
-cpus = int(sys.argv[4])
+iter = maybe_int(sys.argv[2],'iter')
+thin = maybe_int(sys.argv[3],'thin')
+cpus = maybe_int(sys.argv[4],'cpus')
 dbname = sys.argv[5]
 
 input = csv2rec(input)
