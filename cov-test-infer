@@ -25,6 +25,7 @@ if sys.argv[1] in ['-h','--help']:
 
 from cov_test import MCMC_obj
 import matplotlib
+matplotlib.use('pdf')
 matplotlib.interactive(False)
 from pylab import csv2rec
 import os
@@ -61,4 +62,4 @@ M,S=MCMC_obj(pos,neg,lon,lat,t,cv,cpus,dbname)
 M.isample(iter,0,thin)
 os.mkdir(dbname+'_plots')
 os.chdir(dbname+'_plots')
-pm.Matplot.plot(M)
+pm.Matplot.plot(M, format='pdf')
