@@ -58,8 +58,9 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             this_coef = pm.Uninformative(cname + '_coef', value=0.)
             covariate_dict[cname] = (this_coef, cval)
 
-        log_V = pm.Uninformative('log_V', value=0)
-        V = pm.Lambda('V', lambda lv = log_V: np.exp(lv))        
+        # log_V = pm.Uninformative('log_V', value=0)
+        # V = pm.Lambda('V', lambda lv = log_V: np.exp(lv))        
+        V = pm.Exponential('V',.1)
 
         inc = pm.CircVonMises('inc', 0,0)
 
@@ -68,14 +69,17 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             return 0.
         ecc = pm.Lambda('ecc', lambda s=sqrt_ecc: s**2)
 
-        log_amp = pm.Uninformative('log_amp', value=0)
-        amp = pm.Lambda('amp', lambda la = log_amp: np.exp(la))
+        # log_amp = pm.Uninformative('log_amp', value=0)
+        # amp = pm.Lambda('amp', lambda la = log_amp: np.exp(la))
+        amp = pm.Exponential('amp',.1)
 
-        log_scale = pm.Uninformative('log_scale', value=0)
-        scale = pm.Lambda('scale', lambda ls = log_scale: np.exp(ls))
+        # log_scale = pm.Uninformative('log_scale', value=0)
+        # scale = pm.Lambda('scale', lambda ls = log_scale: np.exp(ls))
+        scale = pm.Exponential('scale',.1)
 
-        log_scale_t = pm.Uninformative('log_scale_t', value=0)
-        scale_t = pm.Lambda('scale_t', lambda ls = log_scale_t: np.exp(ls))
+        # log_scale_t = pm.Uninformative('log_scale_t', value=0)
+        # scale_t = pm.Lambda('scale_t', lambda ls = log_scale_t: np.exp(ls))
+        scale_t = pm.Exponential('scale_t',.1)
         
         @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=1)
         def t_lim_corr(value=.8):
