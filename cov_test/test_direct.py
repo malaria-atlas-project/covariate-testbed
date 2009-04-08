@@ -41,12 +41,12 @@ pos = pm.rbinomial(ns, p)
 neg = ns - pos
 
 cv_data = dict(zip(names,[cv[n][:n_data] for n in names]))
-cv_pred = dict(zip(names,[cv[n][:n_pred] for n in names]))
+cv_pred = dict(zip(names,[cv[n][n_data:] for n in names]))
 
 ra_data = np.rec.fromarrays((pos[:n_data], neg[:n_data], lon[:n_data], lat[:n_data], t[:n_data]) + tuple([cv[name][:n_data] for name in names]), names=['pos','neg','lon','lat','t']+names)
 pl.rec2csv(ra_data,'test_data.csv')
 
-ra_pred = np.rec.fromarrays((pos[n_pred:], neg[n_pred:], lon[n_pred:], lat[n_pred:], t[n_pred:]) + tuple([cv[name][n_pred:] for name in names]), names=['pos','neg','lon','lat','t']+names)
+ra_pred = np.rec.fromarrays((pos[n_data:], neg[n_data:], lon[n_data:], lat[n_data:], t[n_data:]) + tuple([cv[name][n_data:] for name in names]), names=['pos','neg','lon','lat','t']+names)
 pl.rec2csv(ra_pred,'test_pred.csv')
 
 

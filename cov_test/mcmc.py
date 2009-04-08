@@ -9,11 +9,7 @@ import pymc as pm
 from make_model import make_model, transform_bin_data
 
 __all__ = ['MCMC_obj']
-def multidot(*args):
-    out = args[0]
-    for a in args[1:]:
-        out = np.dot(out, a)
-    return out
+
 class CovariateStepper(pm.StepMethod):
     
     def __init__(self, covariate_dict, m_const, t, t_coef, M_eval, sig, d):

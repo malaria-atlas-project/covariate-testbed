@@ -1,5 +1,10 @@
 #!/usr/bin/python
 
+# Author: Anand Patil
+# Date: 6 Feb 2009
+# License: Creative Commons BY-NC-SA
+####################################
+
 import sys
 
 doc_str = doc_str = """
@@ -28,6 +33,7 @@ if sys.argv[1] in ['-h','--help']:
 
 
 from cov_test import trace_to_prediction
+import numpy as np
 from pylab import csv2rec
 
 # trace_to_prediction(tracefile, lon, lat, t, covariate_values, ntot, burn=0)
@@ -56,7 +62,7 @@ for n in input.dtype.names:
     if n not in ['lon','lat','t','pos','neg']:
         cv[n]=input[n]
 
-samps = trace_to_prediction(tracefile, lon, lat, t, cv, ntot, burn=0)
-samps.tofile(tracefile.replace('.hdf5','')+'_samps.csv',sep=',')
+# samps = trace_to_prediction(tracefile, lon, lat, t, cv, ntot, burn=0)
+# samps.tofile(tracefile.replace('.hdf5','')+'_samps.csv',sep=',')
 p_pred_data = np.rec.fromarrays(((pos[n_pred:]+1.)/(pos[n_pred:]+neg[n_pred:]+2.), lon[n_pred:], lat[n_pred:], t[n_pred:]), names=['p','lon','lat','t'])
 pl.rec2csv(ra_data,tracefile.replace('.hdf5','')+'_holdout_obs.csv')
