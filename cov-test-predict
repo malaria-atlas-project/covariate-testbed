@@ -34,6 +34,7 @@ if sys.argv[1] in ['-h','--help']:
 
 from cov_test import trace_to_prediction
 import numpy as np
+import pylab as pl
 from pylab import csv2rec
 
 # trace_to_prediction(tracefile, lon, lat, t, covariate_values, ntot, burn=0)
