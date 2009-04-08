@@ -61,7 +61,7 @@ def MCMC_obj(pos,neg,lon,lat,t,cv,cpus,dbname=None,lockdown=False,**kwds):
     # Special Gibbs step method for covariates
     # M.use_step_method(CovariateStepper, M.covariate_dict, M.m_const, t, M.t_coef, M.M_eval, M.sig, M.data)
     # Adaptive Metropolis step method for covariance parameters
-    M.use_step_method(pm.AdaptiveMetropolis, list(M.stochastics), **kwds)
+    M.use_step_method(pm.AdaptiveMetropolis, list(M.stochastics), scales=dict(zip(M.stochastics, [.001]*len(M.stochastics))), **kwds)
     # if lockdown:
     #     M.use_step_method(pm.AdaptiveMetropolis, [M.sqrt_ecc, M.inc], **kwds)
     # else:

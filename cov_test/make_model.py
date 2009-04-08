@@ -51,7 +51,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     while not init_OK:
                 
         # Make coefficients for the covariates.
-        m_const = pm.Uninformative('m_const', value=-3.)
+        m_const = pm.Uninformative('m_const', value=0.)
         t_coef = pm.Uninformative('t_coef',value=.1)        
         covariate_dict = {}
         for cname, cval in covariate_values.iteritems():
@@ -60,7 +60,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
 
         # log_V = pm.Uninformative('log_V', value=0)
         # V = pm.Lambda('V', lambda lv = log_V: np.exp(lv))        
-        V = pm.Exponential('V',.1)
+        V = pm.Exponential('V',.1,value=1.,observed=True)
 
         inc = pm.CircVonMises('inc', 0,0)
 
@@ -71,18 +71,18 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
 
         # log_amp = pm.Uninformative('log_amp', value=0)
         # amp = pm.Lambda('amp', lambda la = log_amp: np.exp(la))
-        amp = pm.Exponential('amp',.1)
+        amp = pm.Exponential('amp',.1,value=1.)
 
         # log_scale = pm.Uninformative('log_scale', value=0)
         # scale = pm.Lambda('scale', lambda ls = log_scale: np.exp(ls))
-        scale = pm.Exponential('scale',.1)
+        scale = pm.Exponential('scale',.1,value=1.)
 
         # log_scale_t = pm.Uninformative('log_scale_t', value=0)
         # scale_t = pm.Lambda('scale_t', lambda ls = log_scale_t: np.exp(ls))
-        scale_t = pm.Exponential('scale_t',.1)
+        scale_t = pm.Exponential('scale_t',.1,value=.1)
         
         @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=1)
-        def t_lim_corr(value=.8):
+        def t_lim_corr(value=.2):
             return 0.
         ecc = pm.Lambda('ecc', lambda s=sqrt_ecc: s**2)
 
@@ -91,7 +91,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             return 0.
         
         if lockdown:
-            for p in [tau, amp, scale, scale_t, t_lim_corr, sin_frac, inc]:
+            for p in [V, amp, scale, scale_t, t_lim_corr, sin_frac]:
                 p._observed=True
     
         # The mean of the field
@@ -126,28 +126,13 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
 
             # The evaluation of the Covariance object, plus the nugget.
             @pm.deterministic(trace=False)
-            def C_eval(C=C, V=V):
-                out = np.asarray(C(logp_mesh, logp_mesh), order='C')
-                out.ravel()[::logp_mesh.shape[0]+1]+=V
-                return  out
-                
-            @pm.deterministic(trace=False)
-            def sig(c=C_eval):
-                try:
-                    return np.linalg.cholesky(c)
-                except np.linalg.LinAlgError:
-                    return None
-            
-            # FIXME: You need to make PyMC give ZeroProbabilities priority over any other errors encountered during a computation.    
-            @pm.potential
-            def posdef_check(sig=sig):
-                if sig is None:
-                    return -np.inf
-                else:
-                    return 0
-            
+            def S_eval(C=C, V=V):
+                out = np.asarray(C(logp_mesh, logp_mesh))
+                out += V*np.eye(logp_mesh.shape[0])
+                return  np.linalg.cholesky(out)
+                                            
             # The field evaluated at the uniquified data locations
-            data = pm.MvNormalChol('f',M_eval,sig,value=d, observed=True)
+            data = pm.MvNormalChol('f',M_eval,S_eval,value=d,observed=True)
 
             init_OK = True
         except pm.ZeroProbability, msg:
