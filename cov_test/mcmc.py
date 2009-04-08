@@ -30,13 +30,17 @@ class CovariateStepper(pm.StepMethod):
         pm.StepMethod.__init__(self, self.beta)
     
     def step(self):
-        # from IPython.Debugger import Pdb
-        # Pdb(color_scheme='Linux').set_trace()   
+
         pri_sig = np.asarray(self.sig.value)
-        pri_tau = np.linalg.inv(np.dot(pri_sig, pri_sig.T))
-        post_C = np.linalg.inv(multidot(self.x,pri_tau,self.x.T))
+        lo = pm.gp.trisolve(pri_sig, self.x.T, uplo='L').T
+        post_tau = np.dot(lo,lo.T)
+        l = np.linalg.cholesky(post_tau)
         
-        post_mean = multidot(post_C, self.x, pri_tau, self.d)
+        post_C = np.linalg.inv(post_tau)
+        post_mean = np.dot(lo, pm.gp.trisolve(pri_sig, self.d, uplo='L'))
+        post_mean = pm.gp.trisolve(l, post_mean, uplo='L')
+        post_mean = pm.gp.trisolve(l.T, post_mean, uplo='U')
+        
         new_val = pm.rmv_normal_cov(post_mean, post_C).squeeze()
         
         [b.set_value(nv) for (b,nv) in zip(self.beta, new_val)]
