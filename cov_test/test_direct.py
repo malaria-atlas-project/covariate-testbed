@@ -51,4 +51,5 @@ pl.rec2csv(ra_pred,'test_pred.csv')
 
 
 MC,S=MCMC_obj(pos[:n_data],neg[:n_data],lon[:n_data],lat[:n_data],t[:n_data],cv_data,4,'test_db',lockdown=False,delay=5000)
+# S.step()
 MC.isample(100000,0,10)
