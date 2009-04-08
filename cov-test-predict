@@ -62,7 +62,7 @@ for n in input.dtype.names:
     if n not in ['lon','lat','t','pos','neg']:
         cv[n]=input[n]
 
-# samps = trace_to_prediction(tracefile, lon, lat, t, cv, ntot, burn=0)
-# samps.tofile(tracefile.replace('.hdf5','')+'_samps.csv',sep=',')
+samps = trace_to_prediction(tracefile, lon, lat, t, cv, ntot, burn=0)
+samps.tofile(tracefile.replace('.hdf5','')+'_samps.csv',sep=',')
 p_pred_data = np.rec.fromarrays(((pos+1.)/(pos+neg+2.), lon, lat, t), names=['p','lon','lat','t'])
 rec2csv(p_pred_data,tracefile.replace('.hdf5','')+'_holdout_obs.csv')
