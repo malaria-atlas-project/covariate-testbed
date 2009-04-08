@@ -4,8 +4,8 @@ import pymc as pm
 import pylab as pl
 from make_model import st_mean_comp, my_st, combine_input_data
 from mcmc import MCMC_obj
-n_data = 90
-n_pred = 10
+n_data = 900
+n_pred = 100
 
 # make_model(d,lon,lat,t,covariate_values)
 names = ['rain','temp','ndvi']
@@ -50,6 +50,6 @@ ra_pred = np.rec.fromarrays((pos[n_pred:], neg[n_pred:], lon[n_pred:], lat[n_pre
 pl.rec2csv(ra_pred,'test_pred.csv')
 
 
-MC,S=MCMC_obj(pos[:n_data],neg[:n_data],lon[:n_data],lat[:n_data],t[:n_data],cv_data,4,'test_db',lockdown=False,delay=5000)
+MC,S=MCMC_obj(pos[:n_data],neg[:n_data],lon[:n_data],lat[:n_data],t[:n_data],cv_data,4,'test_db',lockdown=False)
 # S.step()
 MC.isample(100000,0,10)
