@@ -11,6 +11,12 @@ cov-test-predict dbname input.csv ntot burn
 - input.csv: A csv file whose column names are lat, lon, t, pos, neg and the names of any covariates used.
 - ntot: The total number of predictions to make.
 - burn: The number of burnin iterations to discard.
+
+Produces:
+- dbname_holdout_obs.csv : A csv file whose rows contain the longitude, latitude, time and converted value of 'p' at each holdout location
+- dbname_samps.csv : A csv file whose rows contain ntot predictive samples of 'p' at each holdout location
+
+The i'th element of the 'p' column of dbname_holdout_obs.csv can be compared with the i'th row in dbname_samps.csv.
 """
 
 if len(sys.argv)!=5:
@@ -52,3 +58,5 @@ for n in input.dtype.names:
 
 samps = trace_to_prediction(tracefile, lon, lat, t, cv, ntot, burn=0)
 samps.tofile(tracefile.replace('.hdf5','')+'_samps.csv',sep=',')
+p_pred_data = np.rec.fromarrays(((pos[n_pred:]+1.)/(pos[n_pred:]+neg[n_pred:]+2.), lon[n_pred:], lat[n_pred:], t[n_pred:]), names=['p','lon','lat','t'])
+pl.rec2csv(ra_data,tracefile.replace('.hdf5','')+'_holdout_obs.csv')

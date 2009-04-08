@@ -15,11 +15,11 @@ vals = {'rain': .2,
 
 mc = -.4
 tc = .6
-V = .0001
+V = 1.
 
 lon=np.random.normal(size=n_data+n_pred)
 lat=np.random.normal(size=n_data+n_pred)
-t=np.random.normal(size=n_data+n_pred)
+t=np.random.normal(size=n_data+n_pred)+2009
 
 cv = {}
 for name in names:
@@ -33,7 +33,7 @@ dm=combine_input_data(lon,lat,t)
 M_eval = M(dm)
 C_eval = C(dm,dm)
 
-f = pm.rmv_normal_chol(M_eval, C_eval) + np.random.normal(size=n_data+n_pred)*np.sqrt(V)
+f = pm.rmv_normal_cov(M_eval, C_eval) + np.random.normal(size=n_data+n_pred)*np.sqrt(V)
 f += np.sum([cv[name]*vals[name] for name in names],axis=0)
 p = pm.flib.invlogit(f)
 ns = 100
@@ -43,5 +43,12 @@ neg = ns - pos
 cv_data = dict(zip(names,[cv[n][:n_data] for n in names]))
 cv_pred = dict(zip(names,[cv[n][:n_pred] for n in names]))
 
-M,S=MCMC_obj(pos[:n_data],neg[:n_data],lon[:n_data],lat[:n_data],t[:n_data],cv_data,4,'test_db')
+ra_data = np.rec.fromarrays((pos[:n_data], neg[:n_data], lon[:n_data], lat[:n_data], t[:n_data]) + tuple([cv[name][:n_data] for name in names]), names=['pos','neg','lon','lat','t']+names)
+pl.rec2csv(ra_data,'test_data.csv')
+
+ra_pred = np.rec.fromarrays((pos[n_pred:], neg[n_pred:], lon[n_pred:], lat[n_pred:], t[n_pred:]) + tuple([cv[name][n_pred:] for name in names]), names=['pos','neg','lon','lat','t']+names)
+pl.rec2csv(ra_pred,'test_pred.csv')
+
+
+M,S=MCMC_obj(pos[:n_data],neg[:n_data],lon[:n_data],lat[:n_data],t[:n_data],cv_data,4,'test_db',delay=5000)
 M.isample(10000,0,10)

@@ -12,6 +12,12 @@ cov-test-infer input.csv iter thin ncpus dbname
 - dbname: The filename to use for the trace.
 
 NOTE: Burnin samples are not discarded here, you can ignore them at the prediction stage.
+
+Produces:
+- dbname: An hdf5 archive containing the trace. You don't need to use this directly, but it is used by
+  cov-test-predict.
+- dbname_plots: A directory containing images (in pdf format) of the traces and histograms for each 
+  variable in the model.
 """
 
 import sys
