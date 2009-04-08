@@ -36,7 +36,9 @@ class CovariateStepper(pm.StepMethod):
         post_tau = np.dot(lo,lo.T)
         l = np.linalg.cholesky(post_tau)
         
-        post_C = np.linalg.inv(post_tau)
+        post_C = pm.gp.trisolve(l, np.eye(l.shape[0]),uplo='L')
+        post_C = pm.gp.trisolve(l.T, post_C, uplo='U')
+        
         post_mean = np.dot(lo, pm.gp.trisolve(pri_sig, self.d, uplo='L'))
         post_mean = pm.gp.trisolve(l, post_mean, uplo='L')
         post_mean = pm.gp.trisolve(l.T, post_mean, uplo='U')
