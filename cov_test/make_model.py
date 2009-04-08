@@ -60,7 +60,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
 
         # log_V = pm.Uninformative('log_V', value=0)
         # V = pm.Lambda('V', lambda lv = log_V: np.exp(lv))        
-        V = pm.Exponential('V',.1,value=1.,observed=True)
+        V = pm.Exponential('V',.1,value=1.)
 
         inc = pm.CircVonMises('inc', 0,0)
 
@@ -129,7 +129,17 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             def S_eval(C=C, V=V):
                 out = np.asarray(C(logp_mesh, logp_mesh))
                 out += V*np.eye(logp_mesh.shape[0])
-                return  np.linalg.cholesky(out)
+                try:
+                    return np.linalg.cholesky(out)
+                except np.linalg.LinAlgError:
+                    return None
+                    
+            @pm.potential
+            def check_pd(s=S_eval):
+                if s is None:
+                    return -np.inf
+                else:
+                    return 0.
                                             
             # The field evaluated at the uniquified data locations
             data = pm.MvNormalChol('f',M_eval,S_eval,value=d,observed=True)
