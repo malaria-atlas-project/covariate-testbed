@@ -64,5 +64,5 @@ for n in input.dtype.names:
 
 # samps = trace_to_prediction(tracefile, lon, lat, t, cv, ntot, burn=0)
 # samps.tofile(tracefile.replace('.hdf5','')+'_samps.csv',sep=',')
-p_pred_data = np.rec.fromarrays(((pos[n_pred:]+1.)/(pos[n_pred:]+neg[n_pred:]+2.), lon[n_pred:], lat[n_pred:], t[n_pred:]), names=['p','lon','lat','t'])
+p_pred_data = np.rec.fromarrays(((pos+1.)/(pos+neg+2.), lon, lat, t), names=['p','lon','lat','t'])
 pl.rec2csv(ra_data,tracefile.replace('.hdf5','')+'_holdout_obs.csv')
