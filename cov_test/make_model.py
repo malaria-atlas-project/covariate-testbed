@@ -151,3 +151,36 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             gc.collect()
 
     return locals()
+    
+class CovariateStepper(pm.StepMethod):
+
+    def __init__(self, covariate_dict, m_const, t, t_coef, M_eval, sig, d):
+        self.m_const = m_const
+        self.t_coef=t_coef
+        self.M = M_eval
+        self.sig = sig
+        self.d = d.value
+
+        cvv = covariate_dict.values()
+        self.beta = pm.Container([self.m_const, self.t_coef]+[v[0] for v in cvv])
+        self.x = np.vstack((np.ones((1,len(t))), np.atleast_2d(t), np.asarray([v[1] for v in cvv])))
+
+        pm.StepMethod.__init__(self, self.beta)
+
+    def step(self):
+
+        pri_sig = np.asarray(self.sig.value)
+        lo = pm.gp.trisolve(pri_sig, self.x.T, uplo='L').T
+        post_tau = np.dot(lo,lo.T)
+        l = np.linalg.cholesky(post_tau)
+
+        post_C = pm.gp.trisolve(l, np.eye(l.shape[0]),uplo='L')
+        post_C = pm.gp.trisolve(l.T, post_C, uplo='U')
+
+        post_mean = np.dot(lo, pm.gp.trisolve(pri_sig, self.d, uplo='L'))
+        post_mean = pm.gp.trisolve(l, post_mean, uplo='L')
+        post_mean = pm.gp.trisolve(l.T, post_mean, uplo='U')
+
+        new_val = pm.rmv_normal_cov(post_mean, post_C).squeeze()
+
+        [b.set_value(nv) for (b,nv) in zip(self.beta, new_val)]
