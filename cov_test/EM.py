@@ -6,7 +6,7 @@
 
 import numpy as np
 import pymc as pm
-from make_model import make_model, transform_bin_data, CovariateStepper
+from make_model import make_model, transform_bin_data
 from pymc.NormalApproximation import *
 
 __all__ = ['EM_obj']        
@@ -45,7 +45,7 @@ class EM(MAP):
 
     :SeeAlso: Model, NormApprox, Sampler, scipy.optimize
     """
-    def __init__(self, input, sampler, db='ram', eps=.001, diff_order = 5, verbose=0, tune_interval=10):
+    def __init__(self, input, covariates, db='ram', eps=.001, diff_order = 5, verbose=0, tune_interval=10):
 
         Q = pm.Container(input)
         new_input = (Q.nodes | sampler.nodes) - sampler.stochastics
@@ -157,10 +157,7 @@ def EM_obj(pos,neg,lon,lat,t,cv,cpus,lockdown=False,**kwds):
         print 'Trying to create model'
         try:
             modstuff = make_model(d,lon,lat,t,cv,cpus,lockdown)
-            S = pm.MCMC(modstuff['cv'].itervalues())
-            M = EM(modstuff, S)
-            # MCMC object should only use Gibbs step methods.
-            S.use_step_method(CovariateStepper, M.covariate_dict, M.m_const, t-2009, M.t_coef, M.M_eval, M.S_eval, M.data)
+            M = EM(modstuff, dict(zip(modstuff['cv'].values())))
         except np.linalg.LinAlgError:
             pass
     
