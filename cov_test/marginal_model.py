@@ -68,7 +68,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,prior_var=np.inf):
         def sin_frac(value=.1):
             return 0.
             
-        for s in [V,inc,ecc,scale_t,t_lim_corr]:
+        for s in [V,inc,ecc,scale_t,t_lim_corr,sqrt_ecc,sin_frac,scale]:
             s._observed=True
 
         # Create covariance and MV-normal F if model is spatial.   
