@@ -43,7 +43,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,prior_var=np.inf):
 
         inc = pm.CircVonMises('inc', 0,0)
 
-        @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=1)
+        @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=.9)
         def sqrt_ecc(value=.1):
             return 0.
         ecc = pm.Lambda('ecc', lambda s=sqrt_ecc: s**2)
