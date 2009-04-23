@@ -91,6 +91,8 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,prior_var=np.inf):
                 out = np.asarray(C(logp_mesh, logp_mesh))
                 out += V*np.eye(logp_mesh.shape[0])
                 out += u.T*u
+                if np.any(np.isnan(out)):
+                    return None
                 try:
                     return np.linalg.cholesky(out)
                 except np.linalg.LinAlgError:
