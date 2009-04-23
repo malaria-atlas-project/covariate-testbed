@@ -4,8 +4,8 @@ import pymc as pm
 import pylab as pl
 from marginal_model import make_model
 from util import *
-n_data = 90
-n_pred = 10
+n_data = 900
+n_pred = 100
 
 # make_model(d,lon,lat,t,covariate_values)
 names = ['rain','temp','ndvi']
