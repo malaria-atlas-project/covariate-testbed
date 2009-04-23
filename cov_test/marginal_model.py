@@ -63,11 +63,13 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,prior_var=np.inf):
         @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=1)
         def t_lim_corr(value=.2):
             return 0.
-        ecc = pm.Lambda('ecc', lambda s=sqrt_ecc: s**2)
 
         @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=1)
         def sin_frac(value=.1):
             return 0.
+            
+        for s in [V,inc,ecc,scale_t,t_lim_corr]:
+            s._observed=True
 
         # Create covariance and MV-normal F if model is spatial.   
         try:
