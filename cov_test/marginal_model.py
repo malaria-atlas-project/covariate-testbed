@@ -12,7 +12,7 @@ import gc
 
 __all__ = ['make_model']
     
-def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
+def make_model(d,lon,lat,t,covariate_values,cpus=1,prior_var=np.inf):
     """
     d : transformed ('gaussian-ish') data
     lon : longitude
@@ -23,20 +23,19 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     """
         
     logp_mesh = combine_input_data(lon,lat,t)
+    covariate_names = covariate_values.keys()
 
+    u = np.asmatrix(np.empty((len(covariate_names)+2, logp_mesh.shape[0])))
+    u[0,:] = 1.
+    u[2,:] = logp_mesh[:,2]
+    for i in xrange(len(covariate_names)):
+        u[i+2,:] = covariate_values[covariate_names[i]]
+    
     # =====================
     # = Create PyMC model =
     # =====================    
     init_OK = False
-    while not init_OK:
-                
-        # Make coefficients for the covariates.
-        m_const = pm.Uninformative('m_const', value=0.)
-        t_coef = pm.Uninformative('t_coef',value=.1)        
-        covariate_dict = {}
-        for cname, cval in covariate_values.iteritems():
-            this_coef = pm.Uninformative(cname + '_coef', value=0.)
-            covariate_dict[cname] = (this_coef, cval)
+    while not init_OK:    
 
         # log_V = pm.Uninformative('log_V', value=0)
         # V = pm.Lambda('V', lambda lv = log_V: np.exp(lv))        
@@ -69,23 +68,6 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
         @pm.stochastic(__class__ = pm.CircularStochastic, lo=0, hi=1)
         def sin_frac(value=.1):
             return 0.
-        
-        if lockdown:
-            for p in [V, amp, scale, scale_t, t_lim_corr, sin_frac]:
-                p._observed=True
-    
-        # The mean of the field
-        @pm.deterministic(trace=True)
-        def M(mc=m_const, tc=t_coef):
-            return pm.gp.Mean(st_mean_comp, m_const = mc, t_coef = tc)
-        
-        # The mean, evaluated  at the observation points, plus the covariates    
-        @pm.deterministic(trace=False)
-        def M_eval(M=M, lpm=logp_mesh, cv=covariate_dict):
-            out = M(lpm)
-            for c in cv.itervalues():
-                out += c[0]*c[1]
-            return out
 
         # Create covariance and MV-normal F if model is spatial.   
         try:
@@ -104,25 +86,43 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
                 return pm.gp.FullRankCovariance(my_st, amp=amp, scale=scale, inc=inc, ecc=ecc,st=scale_t, sd=.5,
                                                 tlc=t_lim_corr, sf = sin_frac, n_threads=cpus)
 
+
+            
             # The evaluation of the Covariance object, plus the nugget.
             @pm.deterministic(trace=False)
-            def S_eval(C=C, V=V):
-                out = np.asarray(C(logp_mesh, logp_mesh))
+            def T(C=C, V=V):
+                out = C(logp_mesh, logp_mesh)
                 out += V*np.eye(logp_mesh.shape[0])
                 try:
-                    return np.linalg.cholesky(out)
+                    if np.any(np.isnan(out)):
+                        return None
+                    else:
+                        return out.I
                 except np.linalg.LinAlgError:
                     return None
                     
             @pm.potential
-            def check_pd(s=S_eval):
-                if s is None:
+            def check_pd(t=T):
+                if t is None:
                     return -np.inf
                 else:
                     return 0.
-                                            
-            # The field evaluated at the uniquified data locations
-            data = pm.MvNormalChol('f',M_eval,S_eval,value=d,observed=True)
+                    
+                    for cname, cval in covariate_values.iteritems():
+                        this_coef = pm.Uninformative(cname + '_coef', value=0.)
+                        covariate_dict[cname] = (this_coef, cval)            
+
+            @pm.deterministic
+            def marg_T(T=T, u=u, pv=prior_var):
+                """The marginal precision of the data, with the covariate coefficients integrated out."""
+                if pv>1.e5:
+                    adder = 0
+                else:
+                    adder = np.eye(u.shape[0])/prior_var
+                return T - T*u.T*(adder+u*T*u.T).I*u*T
+            
+            data = pm.MvNormal('data',np.zeros(logp_mesh.shape[0]),marg_T,value=d,observed=True)
+            
 
             init_OK = True
         except pm.ZeroProbability, msg:
