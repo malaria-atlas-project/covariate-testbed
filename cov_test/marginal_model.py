@@ -68,9 +68,6 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,prior_var=np.inf):
         def sin_frac(value=.1):
             return 0.
             
-        for s in [V,inc,ecc,scale_t,t_lim_corr,sqrt_ecc,sin_frac,scale]:
-            s._observed=True
-
         # Create covariance and MV-normal F if model is spatial.   
         try:
             # A constraint on the space-time covariance parameters that ensures temporal correlations are 
@@ -87,43 +84,27 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,prior_var=np.inf):
             def C(amp=amp,scale=scale,inc=inc,ecc=ecc,scale_t=scale_t, t_lim_corr=t_lim_corr, sin_frac=sin_frac):
                 return pm.gp.FullRankCovariance(my_st, amp=amp, scale=scale, inc=inc, ecc=ecc,st=scale_t, sd=.5,
                                                 tlc=t_lim_corr, sf = sin_frac, n_threads=cpus)
-
-
             
             # The evaluation of the Covariance object, plus the nugget.
             @pm.deterministic(trace=False)
-            def T(C=C, V=V):
-                out = C(logp_mesh, logp_mesh)
+            def S_eval(C=C, V=V, u=u):
+                out = np.asarray(C(logp_mesh, logp_mesh))
                 out += V*np.eye(logp_mesh.shape[0])
+                out += u.T*u
                 try:
-                    if np.any(np.isnan(out)):
-                        return None
-                    else:
-                        return out.I
+                    return np.linalg.cholesky(out)
                 except np.linalg.LinAlgError:
                     return None
-                    
+
             @pm.potential
-            def check_pd(t=T):
-                if t is None:
+            def check_pd(s=S_eval):
+                if s is None:
                     return -np.inf
                 else:
                     return 0.
-                    
-                    for cname, cval in covariate_values.iteritems():
-                        this_coef = pm.Uninformative(cname + '_coef', value=0.)
-                        covariate_dict[cname] = (this_coef, cval)            
 
-            @pm.deterministic
-            def marg_T(T=T, u=u, pv=prior_var):
-                """The marginal precision of the data, with the covariate coefficients integrated out."""
-                if pv>1.e5:
-                    adder = 0
-                else:
-                    adder = np.eye(u.shape[0])/prior_var
-                return T - T*u.T*(adder+u*T*u.T).I*u*T
-            
-            data = pm.MvNormal('data',np.zeros(logp_mesh.shape[0]),marg_T,value=d,observed=True)
+            # The field evaluated at the uniquified data locations
+            data = pm.MvNormalChol('f',np.zeros(logp_mesh.shape[0]),S_eval,value=d,observed=True)
             
 
             init_OK = True
