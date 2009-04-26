@@ -53,7 +53,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
                     return 0.
                                             
             # The field evaluated at the uniquified data locations
-            data = pm.MvNormalChol('f',st_sib['M_eval'],S_eval,value=d,observed=True)
+            data = pm.MvNormalChol('f',st_sub['M_eval'],S_eval,value=d,observed=True)
 
             init_OK = True
         except pm.ZeroProbability, msg:
