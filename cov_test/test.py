@@ -14,7 +14,7 @@ vals = {'rain': .2,
 
 mc = -.4
 tc = .6
-V = .0001
+V = .1
 
 lon=np.random.normal(size=n_data+n_pred)
 lat=np.random.normal(size=n_data+n_pred)
@@ -46,8 +46,8 @@ ra_pred = np.rec.fromarrays((pos[n_pred:], neg[n_pred:], lon[n_pred:], lat[n_pre
 pl.rec2csv(ra_pred,'test_pred.csv')
 
 
-os.system('../cov-test-infer test_data.csv 10000 10 2 test')
-os.system('../cov-test-predict test test_pred.csv 1000 100')
+os.system('cov-test-infer test_data.csv 10000 10 2 test')
+os.system('cov-test-predict test test_pred.csv 1000 100')
 
 # ra_data = pl.csv2rec('test_data.csv')
 # ra_pred = pl.csv2rec('test_pred.csv')

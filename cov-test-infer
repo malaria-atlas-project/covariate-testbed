@@ -66,6 +66,10 @@ if dbname in os.listdir('.'):
 input = csv2rec(input)
 
 def maybe_convert(ra, field, dtype):
+    """
+    Tries to cast given field of given record array to given dtype. 
+    Raises helpful error on failure.
+    """
     arr = ra[field]
     try:
         return arr.astype(dtype)

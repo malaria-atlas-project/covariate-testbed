@@ -7,6 +7,7 @@ import tables as tb
 import pymc as pm
 import numpy as np
 from make_model import *
+from map_utils import combine_st_inputs
 
 __all__ = ['trace_to_prediction']
 
@@ -25,8 +26,8 @@ def trace_to_prediction(tracefile, lon, lat, t, covariate_values, ntot, burn=0):
     nper = np.zeros(ntr,dtype=int)
     nper[burn:] = pm.rmultinomial(ntot,np.ones(ntr-burn)/(ntr-burn))
     
-    pred_mesh = combine_input_data(lon,lat,t)
-    data_mesh = combine_input_data(hf.root.lon[:],hf.root.lat[:],hf.root.t[:])
+    pred_mesh = combine_st_inputs(lon,lat,t)
+    data_mesh = combine_st_inputs(hf.root.lon[:],hf.root.lat[:],hf.root.t[:])
     data = hf.root.data[:]
     
     samps = np.empty((ntot, len(t)))

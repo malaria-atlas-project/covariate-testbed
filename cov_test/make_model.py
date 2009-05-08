@@ -26,7 +26,8 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     # = Create PyMC model =
     # =====================    
     # log_V = pm.Uninformative('log_V', value=0)
-    # V = pm.Lambda('V', lambda lv = log_V: np.exp(lv))        
+    # V = pm.Lambda('V', lambda lv = log_V: np.exp(lv))
+          
     V = pm.Exponential('V',.1,value=1.)
     
     init_OK = False
@@ -38,7 +39,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             # The evaluation of the Covariance object, plus the nugget.
             @pm.deterministic(trace=False)
             def S_eval(C_eval=st_sub['C_eval'], V=V):
-                out = C_eval
+                out = C_eval.copy()
                 out += V*np.eye(len(lon))
                 try:
                     return np.linalg.cholesky(out)
@@ -60,5 +61,7 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             print 'Trying again: %s'%msg
             init_OK = False
             gc.collect()
-
-    return locals()
+            
+    out = locals()
+    out.update(st_sub)
+    return out
