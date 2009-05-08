@@ -76,15 +76,12 @@ def maybe_convert(ra, field, dtype):
             except:
                 raise ValueError, 'Input column %s, element %i (starting from zero) is %s,\n which cannot be cast to %s'%(field,i,arr[i],dtype)
                 
-            
-
 lon = maybe_convert(input,'lon','float')
 lat = maybe_convert(input,'lat','float')
 t = maybe_convert(input,'t','float')
 pos = maybe_convert(input,'pos','int')
 neg = maybe_convert(input,'neg','int')
         
-
 cv = {}
 for n in input.dtype.names:
     if n not in ['lon','lat','t','pos','neg']:
