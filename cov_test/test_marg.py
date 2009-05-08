@@ -4,8 +4,8 @@ import pymc as pm
 import pylab as pl
 from marginal_model import make_model
 from util import *
-n_data = 900
-n_pred = 100
+n_data = 90
+n_pred = 10
 
 # make_model(d,lon,lat,t,covariate_values)
 names = ['rain','temp','ndvi']
@@ -50,7 +50,7 @@ ra_pred = np.rec.fromarrays((pos[n_data:], neg[n_data:], lon[n_data:], lat[n_dat
 pl.rec2csv(ra_pred,'test_pred.csv')
 
 prior_var=1e20
-N = pm.MAP(make_model(transform_bin_data(pos[:n_data],neg[:n_data]),lon[:n_data],lat[:n_data],t[:n_data],cv_data,2,prior_var))
+N = pm.NormApprox(make_model(transform_bin_data(pos[:n_data],neg[:n_data]),lon[:n_data],lat[:n_data],t[:n_data],cv_data,8,prior_var))
 N.fit()
 print N.C.value.params
 
