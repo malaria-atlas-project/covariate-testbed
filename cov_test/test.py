@@ -3,8 +3,8 @@ import numpy as np
 import pymc as pm
 import pylab as pl
 from make_model import st_mean_comp, my_st
-n_data = 900
-n_pred = 100
+n_data = 90
+n_pred = 10
 
 on = 1
 

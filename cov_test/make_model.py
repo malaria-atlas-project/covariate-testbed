@@ -8,9 +8,9 @@ import pymc as pm
 from st_cov_fun import my_st
 from util import *
 import gc
-from map_utils import basic_st_submodel
+from map_utils import basic_st_submodel, invlogit
 
-__all__ = ['make_model','f_name','x_name','nugget_name','f_has_nugget','metadata_keys']
+__all__ = ['make_model','f_name','x_name','nugget_name','f_has_nugget','metadata_keys','postproc']
 
 def make_model(pos,neg,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     """
@@ -41,13 +41,14 @@ def make_model(pos,neg,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             st_sub = basic_st_submodel(lon, lat, t, covariate_values, cpus)        
 
             # The evaluation of the Covariance object, plus the nugget.
-            @pm.deterministic
+            @pm.deterministic(trace=False)
             def nug_C_eval(C_eval = st_sub['C_eval'], V=V):
                 """nug_C_eval = function(C_eval, V)"""
                 return C_eval + V*np.eye(len(lon))
                                             
             # The field evaluated at the uniquified data locations
             data = pm.MvNormalCov('data',st_sub['M_eval'],nug_C_eval,value=transform_bin_data(pos,neg),observed=True)
+            data_val = data.value
 
             init_OK = True
         except pm.ZeroProbability, msg:
@@ -59,8 +60,9 @@ def make_model(pos,neg,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     out.update(st_sub)
     return out
     
-f_name = 'data'
+f_name = 'data_val'
 x_name = 'logp_mesh'
 f_has_nugget = True
 nugget_name = 'V'
-metadata_keys = []
+postproc = invlogit
+metadata_keys = ['data_val']
