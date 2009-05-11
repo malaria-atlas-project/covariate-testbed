@@ -11,6 +11,7 @@ from map_utils import combine_st_inputs
 
 __all__ = ['trace_to_prediction']
 
+#TODO: Use map_utils' prediction_utils.
 def trace_to_prediction(tracefile, lon, lat, t, covariate_values, ntot, burn=0):
     """
     Converts a previously-produced HDF5 archive to samples from the predictive distribution

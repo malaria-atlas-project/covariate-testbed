@@ -2,10 +2,11 @@ import sys, os
 import numpy as np
 import pymc as pm
 import pylab as pl
-from make_model import st_mean_comp, my_st, combine_input_data
+from map_utils import st_mean_comp, combine_st_inputs
+from st_cov_fun import my_st
 from mcmc import MCMC_obj
-n_data = 900
-n_pred = 100
+n_data = 90
+n_pred = 10
 
 # make_model(d,lon,lat,t,covariate_values)
 names = ['rain','temp','ndvi']
@@ -28,7 +29,7 @@ for name in names:
 M = pm.gp.Mean(st_mean_comp, m_const = mc, t_coef = tc)
 C = pm.gp.FullRankCovariance(my_st, amp=1, scale=1, inc=np.pi/4, ecc=.9,st=.1, sd=.5, tlc=.2, sf = .1)
 
-dm=combine_input_data(lon,lat,t)
+dm=combine_st_inputs(lon,lat,t)
 
 M_eval = M(dm)
 C_eval = C(dm,dm)

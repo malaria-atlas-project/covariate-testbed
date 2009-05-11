@@ -5,6 +5,8 @@
 # License: Creative Commons BY-NC-SA
 ####################################
 
+# TODO: Move into map_utils, make generic.
+
 import sys
 
 doc_str = doc_str = """
@@ -59,7 +61,7 @@ neg = input.neg
 
 cv = {}
 for n in input.dtype.names:
-    if n not in ['lon','lat','t','pos','neg']:
+    if n not in ['lon','lat','pos','neg']:
         cv[n]=input[n]
 
 samps = trace_to_prediction(tracefile, lon, lat, t, cv, ntot, burn=0)

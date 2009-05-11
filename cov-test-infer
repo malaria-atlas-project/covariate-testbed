@@ -5,12 +5,14 @@
 # License: Creative Commons BY-NC-SA
 ####################################
 
+# TODO: Move into map_utils, make generic.
+
 doc_str = """
 How to use cov-test-infer
 
 cov-test-infer input.csv iter thin ncpus dbname
 
-- input.csv: A csv file whose column names are lat, lon, t, pos, neg and the names of any covariates used.
+- input.csv: A csv file whose column names are lat, lon, pos, neg and the names of any covariates used.
 - iter: The number of MCMC iterations to use.
 - thin: The interval at which samples should be kept (tallied).
 - ncpus: The number of processors to be used.
@@ -88,7 +90,7 @@ neg = maybe_convert(input,'neg','int')
         
 cv = {}
 for n in input.dtype.names:
-    if n not in ['lon','lat','t','pos','neg']:
+    if n not in ['lon','lat','pos','neg']:
         cv[n]=maybe_convert(input, n, 'float')
         
 M,S=MCMC_obj(pos,neg,lon,lat,t,cv,cpus,dbname)

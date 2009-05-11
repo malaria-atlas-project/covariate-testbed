@@ -10,9 +10,9 @@ from util import *
 import gc
 from map_utils import basic_st_submodel
 
-__all__ = ['make_model']
-    
-def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
+__all__ = ['make_model','f_name','x_name','nugget_name','f_has_nugget']
+
+def make_model(pos,neg,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     """
     d : transformed ('gaussian-ish') data
     lon : longitude
@@ -27,6 +27,8 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     # =====================    
     # log_V = pm.Uninformative('log_V', value=0)
     # V = pm.Lambda('V', lambda lv = log_V: np.exp(lv))
+    
+    d = transform_bin_data(pos,neg)
           
     V = pm.Exponential('V',.1,value=1.)
     
@@ -65,3 +67,8 @@ def make_model(d,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     out = locals()
     out.update(st_sub)
     return out
+    
+f_name = 'data'
+x_name = 'logp_mesh'
+f_has_nugget = True
+nugget_name = 'V'
