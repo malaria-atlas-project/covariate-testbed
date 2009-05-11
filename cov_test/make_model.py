@@ -10,11 +10,12 @@ from util import *
 import gc
 from map_utils import basic_st_submodel
 
-__all__ = ['make_model','f_name','x_name','nugget_name','f_has_nugget']
+__all__ = ['make_model','f_name','x_name','nugget_name','f_has_nugget','metadata_keys']
 
 def make_model(pos,neg,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     """
-    d : transformed ('gaussian-ish') data
+    pos : Number positive
+    neg : Number negative
     lon : longitude
     lat : latitude
     t : time
@@ -25,11 +26,12 @@ def make_model(pos,neg,lon,lat,t,covariate_values,cpus=1,lockdown=False):
     # =====================
     # = Create PyMC model =
     # =====================    
-    # log_V = pm.Uninformative('log_V', value=0)
-    # V = pm.Lambda('V', lambda lv = log_V: np.exp(lv))
     
-    d = transform_bin_data(pos,neg)
-          
+    # V_shift = pm.Exponential('V_shift',.1,value=1.)
+    # V = V_shift + .1
+    # V.__name__ = 'V'
+    # V.trace=True
+    
     V = pm.Exponential('V',.1,value=1.)
     
     init_OK = False
@@ -39,24 +41,13 @@ def make_model(pos,neg,lon,lat,t,covariate_values,cpus=1,lockdown=False):
             st_sub = basic_st_submodel(lon, lat, t, covariate_values, cpus)        
 
             # The evaluation of the Covariance object, plus the nugget.
-            @pm.deterministic(trace=False)
-            def S_eval(C_eval=st_sub['C_eval'], V=V):
-                out = C_eval.copy()
-                out += V*np.eye(len(lon))
-                try:
-                    return np.linalg.cholesky(out)
-                except np.linalg.LinAlgError:
-                    return None
-                    
-            @pm.potential
-            def check_pd(s=S_eval):
-                if s is None:
-                    return -np.inf
-                else:
-                    return 0.
+            @pm.deterministic
+            def nug_C_eval(C_eval = st_sub['C_eval'], V=V):
+                """nug_C_eval = function(C_eval, V)"""
+                return C_eval + V*np.eye(len(lon))
                                             
             # The field evaluated at the uniquified data locations
-            data = pm.MvNormalChol('f',st_sub['M_eval'],S_eval,value=d,observed=True)
+            data = pm.MvNormalCov('data',st_sub['M_eval'],nug_C_eval,value=transform_bin_data(pos,neg),observed=True)
 
             init_OK = True
         except pm.ZeroProbability, msg:
@@ -72,3 +63,4 @@ f_name = 'data'
 x_name = 'logp_mesh'
 f_has_nugget = True
 nugget_name = 'V'
+metadata_keys = []
