@@ -25,14 +25,9 @@ def make_model(pos,neg,lon,lat,t,covariate_values,cpus=1,lockdown=False):
 
     # =====================
     # = Create PyMC model =
-    # =====================    
+    # =====================
     
-    # V_shift = pm.Exponential('V_shift',.1,value=1.)
-    # V = V_shift + .1
-    # V.__name__ = 'V'
-    # V.trace=True
-    
-    V = pm.Exponential('V',.1,value=1.)
+    V = pm.Exponential('V',1,value=.01,observed=True)
     
     init_OK = False
     while not init_OK:
